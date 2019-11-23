@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.87
+MinimumVisualStudioVersion = 15.0.26124.0
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configuration", "Configuration", "{E8D3260C-1CD0-4697-8DAA-5CE6C2A874E4}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		dotnet.ruleset = dotnet.ruleset
+		stylecop.json = stylecop.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2A10821C-A301-4414-ABDF-257844715D87}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoData.Runner", "src\GeoData.Runner\GeoData.Runner.csproj", "{47F41B73-F34D-4091-8043-CA2A60DE6D44}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoData.Model", "src\GeoData.Model\GeoData.Model.csproj", "{A9CC7397-363F-4E4F-85E4-EC9423206D3F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47F41B73-F34D-4091-8043-CA2A60DE6D44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F41B73-F34D-4091-8043-CA2A60DE6D44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47F41B73-F34D-4091-8043-CA2A60DE6D44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47F41B73-F34D-4091-8043-CA2A60DE6D44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9CC7397-363F-4E4F-85E4-EC9423206D3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9CC7397-363F-4E4F-85E4-EC9423206D3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9CC7397-363F-4E4F-85E4-EC9423206D3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9CC7397-363F-4E4F-85E4-EC9423206D3F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{47F41B73-F34D-4091-8043-CA2A60DE6D44} = {2A10821C-A301-4414-ABDF-257844715D87}
+		{A9CC7397-363F-4E4F-85E4-EC9423206D3F} = {2A10821C-A301-4414-ABDF-257844715D87}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D5547AA9-F229-4A69-9573-1EEF2E075853}
+	EndGlobalSection
+EndGlobal
