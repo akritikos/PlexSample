@@ -5,6 +5,7 @@ namespace Kritikos.GeoData.Runner
 	using System.Diagnostics.CodeAnalysis;
 	using System.Globalization;
 	using System.IO;
+	using System.Linq;
 	using System.Text;
 	using System.Text.RegularExpressions;
 
@@ -29,41 +30,48 @@ namespace Kritikos.GeoData.Runner
 			.WriteTo.File("output.txt", encoding: Encoding.UTF8, outputTemplate: "{Message:lj}{NewLine}", shared: true);
 
 		/// <summary>
-		/// Pattern of the first row in each record.
+		/// Correlates line types with their respective regex patterns
 		/// </summary>
-		/// <remarks>
-		/// Also captures the second row, execution should take that into consideration.
-		/// </remarks>
-		private static readonly Regex GeoDataHeader =
-			new Regex(@"# (?<Name>.+?) \[(?<Description>.+?)\]", RegexOptions.Compiled);
-
-		/// <summary>
-		/// Pattern of the second row in each record.
-		/// </summary>
-		private static readonly Regex GeoDataLocation
-			= new Regex(
+		private static readonly (GeoLineType type, Regex pattern)[] Patterns =
+		{
+			(GeoLineType.Location, new Regex(
 				@"\(lat: (?<MinLat>(?:\-*)\d+.\d+), (?<MaxLat>(?:\-*)\d+.\d+)\) - \(lon: (?<MinLon>(?:\-*)\d+.\d+), (?<MaxLon>(?:\-*)\d+.\d+)",
-				RegexOptions.Compiled);
+				RegexOptions.Compiled)),
 
-		/// <summary>
-		/// Pattern of the third row in each record.
-		/// </summary>
-		private static readonly Regex GeoDataObsoletion
-			= new Regex(@"# (?<Obsolete>DISCONTINUED|DEPRECATED)", RegexOptions.Compiled);
+			// Pattern of the first row in each record. **CAN ALSO CAPTURE FIRST LINE, CARE WITH ORDER**
+			(GeoLineType.Header, new Regex(
+				@"# (?<Name>.+?) \[(?<Description>.+?)\]",
+				RegexOptions.Compiled)),
 
-		/// <summary>
-		/// Pattern of the fourth row in each record.
-		/// </summary>
-		private static readonly Regex GeoDataIdentity
-			= new Regex(@"<(?<Identity>\d+)> \+proj=(?<ProjValue>.+?) ", RegexOptions.Compiled);
+			// Pattern of the second row in each record.
+			(GeoLineType.Obsoletion, new Regex(
+				@"# (?<Obsolete>DISCONTINUED|DEPRECATED)",
+				RegexOptions.Compiled)),
+
+			// Pattern of the third row in each record.
+			(GeoLineType.Identity, new Regex(
+				@"<(?<Identity>\d+)> \+proj=(?<ProjValue>.+?) ",
+				RegexOptions.Compiled)),
+
+			// Empty lines between records
+			(GeoLineType.Empty, new Regex(
+				@"^$",
+				RegexOptions.Compiled)),
+		};
 
 		/// <summary>
 		/// Simple collection in case the file output by Serilog isn't enough.
 		/// </summary>
 		private static readonly List<GeoModel> Data = new List<GeoModel>();
 
-		[SuppressMessage("Exceptions usages", "EX006:Do not write logic driven by exceptions.", Justification = "Console App, recovering from this error is not in the scope of the assigment.")]
-		[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Final frontier for log output, can't catch more specific exceptions")]
+		[SuppressMessage(
+			"Exceptions usages",
+			"EX006:Do not write logic driven by exceptions.",
+			Justification = "Console App, recovering from this error is not in the scope of the assigment.")]
+		[SuppressMessage(
+			"Design",
+			"CA1031:Do not catch general exception types",
+			Justification = "Final frontier for log output, can't catch more specific exceptions")]
 		public static void Main(string[] args)
 		{
 			var path = args?.Length > 0
@@ -95,28 +103,30 @@ namespace Kritikos.GeoData.Runner
 				// For each line in input file, in the order encountered
 				while ((line = stream.ReadLine()) != null)
 				{
-					Match match;
+					var patternMatch = Patterns
+						.Select(t => (LineType: t.type, Match: t.pattern.Match(line)))
+						.FirstOrDefault(t => t.Match.Success);
 
 					// Figure out if this line matches the regex of a specific row and act accordingly
 					// Top down evaluation, the GeoDataHeader pattern always matches both the first and second rows
 					// so we evaluate GeoDataLocation first to capture the second row if applicable
-					data = line switch
+					data = patternMatch switch
 					{
-						// The second row of a record -> Populate Lat/Long fields from values discovered
-						_ when (match = GeoDataLocation.Match(line)).Success => data.ParseGeoDataLocation(match),
-
-						// The first row of a record -> Populate Name and Description values
-						_ when (match = GeoDataHeader.Match(line)).Success => data.ParseGeoDataHeader(match),
-
-						// The third (optional) line of a record -> Populate field describing obsoletion status
-						_ when (match = GeoDataObsoletion.Match(line)).Success => data.ParseGeoDataObsoletion(match),
-
-						// The fourth (final) line of a record -> Populate Identity and Project Value fields
-						_ when (match = GeoDataIdentity.Match(line)).Success => data.ParseGeoDataIdentity(match),
-
 						// An empty line -> Save currently parsed record to the list, output to console/file and return
 						//                  a new record to continue the process
-						_ when string.IsNullOrWhiteSpace(line) => data.PersistGeoData(),
+						(GeoLineType.Empty, _) => data.PersistGeoData(),
+
+						// The second row of a record -> Populate Lat/Long fields from values discovered
+						(GeoLineType.Location, var match) => data.ParseGeoDataLocation(match),
+
+						// The first row of a record -> Populate Name and Description values
+						(GeoLineType.Header, var match) => data.ParseGeoDataHeader(match),
+
+						// The third (optional) line of a record -> Populate field describing obsoletion status
+						(GeoLineType.Obsoletion, var match) => data.ParseGeoDataObsoletion(match),
+
+						// The fourth (final) line of a record -> Populate Identity and Project Value fields
+						(GeoLineType.Identity, var match) => data.ParseGeoDataIdentity(match),
 
 						// A line not matching any of the previous patterns, we don't know what we just read
 						_ => throw new InvalidDataException($"Line is in unexpected format: {line}"),
